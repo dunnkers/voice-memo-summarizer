@@ -20,10 +20,22 @@ class TestResolveAudioPath:
         path = resolve_audio_path(["prog", "  /path/to/memo.m4a  "])
         assert path == Path("/path/to/memo.m4a")
 
-    def test_prompts_when_no_arg(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        monkeypatch.setattr("builtins.input", lambda _: "/dropped/file.m4a")
+    def test_opens_file_picker_when_no_arg(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setattr(
+            "voice_memo_summarizer.__main__.pick_audio_file",
+            lambda: Path("/picked/file.m4a"),
+        )
         path = resolve_audio_path(["prog"])
-        assert path == Path("/dropped/file.m4a")
+        assert path == Path("/picked/file.m4a")
+
+    def test_exits_when_picker_cancelled(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr(
+            "voice_memo_summarizer.__main__.pick_audio_file", lambda: None
+        )
+        with pytest.raises(SystemExit, match="1"):
+            resolve_audio_path(["prog"])
 
 
 class TestExtractTitle:

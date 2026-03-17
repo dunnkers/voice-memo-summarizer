@@ -5,24 +5,27 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
+from voice_memo_summarizer.clipboard import pick_audio_file
 from voice_memo_summarizer.craft import upload_to_craft
 from voice_memo_summarizer.summarizer import summarize_audio
 
 
 def resolve_audio_path(args: list[str]) -> Path:
-    """Get the audio file path from CLI args or interactive prompt.
+    """Get the audio file path from CLI args or native file picker.
 
-    Handles drag-and-drop paths which may have trailing whitespace or
-    be wrapped in quotes.
+    If a CLI argument is provided, use it directly. Otherwise, open a
+    native macOS file picker defaulting to the Voice Memos directory.
     """
     if len(args) > 1:
-        raw = args[1]
-    else:
-        raw = input("Drop a voice memo file here: ")
+        # Drag-and-drop into terminal can add quotes or trailing whitespace.
+        cleaned = args[1].strip().strip("'\"")
+        return Path(cleaned)
 
-    # Drag-and-drop into terminal can add quotes or trailing whitespace.
-    cleaned = raw.strip().strip("'\"")
-    return Path(cleaned)
+    path = pick_audio_file()
+    if path is None:
+        print("No file selected.", file=sys.stderr)
+        sys.exit(1)
+    return path
 
 
 def extract_title(summary: str) -> str:

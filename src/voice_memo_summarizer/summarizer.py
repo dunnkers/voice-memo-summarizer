@@ -12,6 +12,7 @@ GCP_LOCATION = "global"
 
 PROMPT = """\
 You are a meeting notes assistant. Summarize this voice memo concisely.
+Write your summary in the same language as the audio.
 
 Structure your summary as:
 - **Title**: A short descriptive title
