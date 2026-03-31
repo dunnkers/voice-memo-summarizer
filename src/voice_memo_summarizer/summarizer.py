@@ -1,27 +1,44 @@
-"""Summarize audio using Gemini via Vertex AI."""
+"""Summarize files using Gemini via Vertex AI."""
 
+import mimetypes
 import os
 from pathlib import Path
 
 from google import genai
 from google.genai import types
 
-MODEL = "gemini-3.1-flash-lite-preview"
+MODEL = "gemini-3.1-pro-preview"
 # The flash-lite-preview model is only available in the global region.
 GCP_LOCATION = "global"
 
-PROMPT = """\
-You are a meeting notes assistant. Summarize this voice memo concisely.
+DEFAULT_PROMPT = """\
+You are a meeting notes assistant. Your task is to: 1) transcribe, 2) summarise and then 3) provide action items from this phone call. The phone call recording is attached.
 Write your summary in the same language as the audio.
-
-Structure your summary as:
-- **Title**: A short descriptive title
-- **Key Points**: Bullet list of main topics discussed
-- **Action Items**: Any tasks or follow-ups mentioned (if any)
-- **Summary**: 2-3 sentence overview
-
-Keep it concise and actionable.\
 """
+
+# Extra MIME types not always in Python's default database.
+_MIME_OVERRIDES: dict[str, str] = {
+    ".m4a": "audio/m4a",
+    ".qta": "audio/mp4",
+    ".mp3": "audio/mpeg",
+    ".wav": "audio/wav",
+    ".ogg": "audio/ogg",
+    ".flac": "audio/flac",
+    ".webm": "audio/webm",
+    ".mp4": "video/mp4",
+    ".mov": "video/quicktime",
+    ".webp": "image/webp",
+    ".heic": "image/heic",
+}
+
+
+def guess_mime_type(path: Path) -> str:
+    """Guess the MIME type for a file, with sensible defaults."""
+    suffix = path.suffix.lower()
+    if suffix in _MIME_OVERRIDES:
+        return _MIME_OVERRIDES[suffix]
+    mime, _ = mimetypes.guess_type(path.name)
+    return mime or "application/octet-stream"
 
 
 def make_client() -> genai.Client:
@@ -36,22 +53,30 @@ def make_client() -> genai.Client:
     )
 
 
-def summarize_audio(audio_path: Path, client: genai.Client | None = None) -> str:
-    """Send an audio file to Gemini and return the summary.
+def summarize(
+    files: list[Path],
+    prompt: str = DEFAULT_PROMPT,
+    client: genai.Client | None = None,
+) -> str:
+    """Send files to Gemini with a prompt and return the response.
 
     Args:
-        audio_path: Path to an .m4a audio file.
+        files: Paths to files to embed in the request (audio, images, PDFs, etc.).
+        prompt: The instruction prompt.
         client: Optional pre-configured client (for testing).
     """
     if client is None:
         client = make_client()
 
-    audio_bytes = audio_path.read_bytes()
-    audio_part = types.Part.from_bytes(data=audio_bytes, mime_type="audio/m4a")
+    parts: list[types.Part | str] = [prompt]
+    for file_path in files:
+        mime = guess_mime_type(file_path)
+        data = file_path.read_bytes()
+        parts.append(types.Part.from_bytes(data=data, mime_type=mime))
 
     response = client.models.generate_content(
         model=MODEL,
-        contents=[PROMPT, audio_part],
+        contents=parts,
     )
     if response.text is None:
         raise RuntimeError("Gemini returned an empty response")

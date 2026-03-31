@@ -5,27 +5,36 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-from voice_memo_summarizer.clipboard import pick_audio_file
+from voice_memo_summarizer.clipboard import pick_files
 from voice_memo_summarizer.craft import upload_to_craft
-from voice_memo_summarizer.summarizer import summarize_audio
+from voice_memo_summarizer.summarizer import DEFAULT_PROMPT, summarize
 
 
-def resolve_audio_path(args: list[str]) -> Path:
-    """Get the audio file path from CLI args or native file picker.
+def resolve_files(args: list[str]) -> list[Path]:
+    """Get file paths from CLI args or native file picker.
 
-    If a CLI argument is provided, use it directly. Otherwise, open a
-    native macOS file picker defaulting to the Voice Memos directory.
+    If CLI arguments are provided, use them directly. Otherwise, open a
+    native macOS file picker allowing multiple file selection.
     """
     if len(args) > 1:
-        # Drag-and-drop into terminal can add quotes or trailing whitespace.
-        cleaned = args[1].strip().strip("'\"")
-        return Path(cleaned)
+        paths = []
+        for arg in args[1:]:
+            cleaned = arg.strip().strip("'\"")
+            paths.append(Path(cleaned))
+        return paths
 
-    path = pick_audio_file()
-    if path is None:
-        print("No file selected.", file=sys.stderr)
+    paths = pick_files()
+    if not paths:
+        print("No files selected.", file=sys.stderr)
         sys.exit(1)
-    return path
+    return paths
+
+
+def ask_prompt() -> str:
+    """Ask the user for a custom prompt, defaulting to the built-in one."""
+    print(f"Default prompt:\n  {DEFAULT_PROMPT.strip()}\n")
+    custom = input("Enter custom prompt (or press Enter to use default): ").strip()
+    return custom if custom else DEFAULT_PROMPT
 
 
 def extract_title(summary: str) -> str:
@@ -37,25 +46,27 @@ def extract_title(summary: str) -> str:
 
 
 def main() -> None:
-    """Find a voice memo, summarize it, and optionally upload to Craft."""
+    """Select files, get a prompt, summarize, and optionally upload to Craft."""
     load_dotenv()
-    audio_path = resolve_audio_path(sys.argv)
+    files = resolve_files(sys.argv)
 
-    if not audio_path.exists():
-        print(f"Error: file not found: {audio_path}", file=sys.stderr)
-        sys.exit(1)
+    for f in files:
+        if not f.exists():
+            print(f"Error: file not found: {f}", file=sys.stderr)
+            sys.exit(1)
 
-    if audio_path.suffix.lower() != ".m4a":
-        print(f"Error: expected .m4a file, got {audio_path.suffix}", file=sys.stderr)
-        sys.exit(1)
-
-    size_kb = audio_path.stat().st_size / 1024
-    print(f"Voice memo: {audio_path.name} ({size_kb:.0f} KB)")
+    total_kb = sum(f.stat().st_size for f in files) / 1024
+    print(f"Selected {len(files)} file(s) ({total_kb:.0f} KB total):")
+    for f in files:
+        print(f"  - {f.name}")
     print()
 
-    print("Summarizing with Gemini...")
+    prompt = ask_prompt()
+    print()
+
+    print("Sending to Gemini...")
     try:
-        summary = summarize_audio(audio_path)
+        summary = summarize(files, prompt=prompt)
     except Exception as e:
         print(f"Error during summarization: {e}", file=sys.stderr)
         sys.exit(1)

@@ -1,4 +1,4 @@
-"""Get a voice memo file via native macOS file picker."""
+"""Get files via native macOS file picker."""
 
 import subprocess
 from pathlib import Path
@@ -9,18 +9,26 @@ VOICE_MEMOS_DIR = (
 )
 
 
-def pick_audio_file(default_dir: Path = VOICE_MEMOS_DIR) -> Path | None:
-    """Open a native macOS file picker dialog and return the selected path.
+def pick_files(default_dir: Path = VOICE_MEMOS_DIR) -> list[Path]:
+    """Open a native macOS file picker dialog and return the selected paths.
 
+    Allows selecting multiple files of any type.
     Defaults to the Voice Memos recordings directory.
-    Returns None if the user cancels.
+    Returns an empty list if the user cancels.
     """
     script = (
         f'set defaultDir to POSIX file "{default_dir}" as alias\n'
         "try\n"
-        '    POSIX path of (choose file of type {"public.audio"} '
-        'with prompt "Select a voice memo" '
-        "default location defaultDir)\n"
+        "    set selectedFiles to choose file "
+        'with prompt "Select files" '
+        "default location defaultDir "
+        "with multiple selections allowed\n"
+        "    set posixPaths to {}\n"
+        "    repeat with f in selectedFiles\n"
+        "        set end of posixPaths to POSIX path of f\n"
+        "    end repeat\n"
+        '    set AppleScript\'s text item delimiters to "\\n"\n'
+        "    return posixPaths as text\n"
         "on error\n"
         '    return ""\n'
         "end try"
@@ -30,7 +38,7 @@ def pick_audio_file(default_dir: Path = VOICE_MEMOS_DIR) -> Path | None:
         capture_output=True,
         text=True,
     )
-    path_str = result.stdout.strip()
-    if not path_str:
-        return None
-    return Path(path_str)
+    output = result.stdout.strip()
+    if not output:
+        return []
+    return [Path(line) for line in output.splitlines() if line.strip()]
