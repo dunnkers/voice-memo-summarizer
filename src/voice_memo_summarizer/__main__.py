@@ -1,12 +1,12 @@
 """CLI entry point for voice-memo-summarizer."""
 
+import subprocess
 import sys
 from pathlib import Path
 
 from dotenv import load_dotenv
 
 from voice_memo_summarizer.clipboard import pick_files
-from voice_memo_summarizer.craft import upload_to_craft
 from voice_memo_summarizer.summarizer import DEFAULT_PROMPT, summarize
 
 
@@ -37,16 +37,13 @@ def ask_prompt() -> str:
     return custom if custom else DEFAULT_PROMPT
 
 
-def extract_title(summary: str) -> str:
-    """Extract a title from the summary, falling back to a default."""
-    for line in summary.strip().splitlines():
-        if "title" in line.lower() and ":" in line:
-            return line.split(":", 1)[1].strip().strip("*").strip()
-    return "Voice Memo Summary"
+def copy_to_clipboard(text: str) -> None:
+    """Copy text to the macOS clipboard using pbcopy."""
+    subprocess.run(["pbcopy"], input=text.encode(), check=True)
 
 
 def main() -> None:
-    """Select files, get a prompt, summarize, and optionally upload to Craft."""
+    """Select files, get a prompt, summarize, and optionally copy to clipboard."""
     load_dotenv()
     files = resolve_files(sys.argv)
 
@@ -75,17 +72,10 @@ def main() -> None:
     print(summary)
     print()
 
-    answer = input("Upload to Craft? [y/N] ").strip().lower()
-    if answer != "y":
-        return
-
-    title = extract_title(summary)
-    try:
-        dated_title = upload_to_craft(title, summary)
-        print(f"Uploaded to Craft: {dated_title}")
-    except Exception as e:
-        print(f"Error uploading to Craft: {e}", file=sys.stderr)
-        sys.exit(1)
+    answer = input("Copy note to clipboard? [y/N] ").strip().lower()
+    if answer == "y":
+        copy_to_clipboard(summary)
+        print("Copied to clipboard.")
 
 
 if __name__ == "__main__":
