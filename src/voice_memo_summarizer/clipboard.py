@@ -3,17 +3,14 @@
 import subprocess
 from pathlib import Path
 
-VOICE_MEMOS_DIR = (
-    Path.home()
-    / "Library/Group Containers/group.com.apple.VoiceMemos.shared/Recordings"
-)
+DOWNLOADS_DIR = Path.home() / "Downloads"
 
 
-def pick_files(default_dir: Path = VOICE_MEMOS_DIR) -> list[Path]:
+def pick_files(default_dir: Path = DOWNLOADS_DIR) -> list[Path]:
     """Open a native macOS file picker dialog and return the selected paths.
 
     Allows selecting multiple files of any type.
-    Defaults to the Voice Memos recordings directory.
+    Defaults to the Downloads directory.
     Returns an empty list if the user cancels.
     """
     script = (
