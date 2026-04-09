@@ -6,10 +6,10 @@ A CLI tool that summarizes voice memos and other files using Gemini on Vertex AI
 
 ## Usage
 
-Requires a GCP project with Vertex AI enabled. Set the `GCP_PROJECT` environment variable (e.g. via `.env`, `export`, or inline):
+Requires a GCP project with Vertex AI enabled. Set the `GCP_PROJECT` environment variable (e.g. via `.env`, `export`, or inline).
 
 ```sh
-GCP_PROJECT=your-gcp-project uv run voice-memo-summarizer
+uv run voice-memo-summarizer
 ```
 
 A native macOS file picker opens, allowing you to select one or more files (audio, markdown, PDFs, etc.):
@@ -34,7 +34,7 @@ After summarization, you can copy the result to your clipboard.
 You can also pass files directly as arguments:
 
 ```sh
-GCP_PROJECT=your-gcp-project uv run voice-memo-summarizer recording.m4a notes.md
+uv run voice-memo-summarizer recording.m4a notes.md
 ```
 
 ## Installation
