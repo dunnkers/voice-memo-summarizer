@@ -12,7 +12,7 @@ Requires a GCP project with Vertex AI enabled. Set the `GCP_PROJECT` environment
 uv run voice-memo-summarizer
 ```
 
-A native macOS file picker opens, allowing you to select one or more files (audio, markdown, PDFs, etc.):
+A native macOS file picker opens, allowing you to select one or more files. Supported file types include audio (`.m4a`, `.mp3`, `.wav`, `.ogg`, `.flac`, `.webm`), video (`.mp4`, `.mov`), images (`.webp`, `.heic`), markdown, and PDFs.
 
 ```
 Selected 2 file(s) (9450 KB total):
@@ -34,7 +34,7 @@ After summarization, you can copy the result to your clipboard.
 You can also pass files directly as arguments:
 
 ```sh
-uv run voice-memo-summarizer recording.m4a notes.md
+uv run voice-memo-summarizer file1 file2 file3
 ```
 
 ## Installation
