@@ -12,8 +12,8 @@ MODEL = "gemini-3.1-pro-preview"
 GCP_LOCATION = "global"
 
 DEFAULT_PROMPT = """\
-You are a meeting notes assistant. Your task is to: 1) transcribe, 2) summarise and then 3) provide action items from this phone call. The phone call recording is attached.
-Write your summary in the same language as the audio.
+You are a meeting notes assistant. Your task is to: 1) transcribe, 2) summarise and then, if applicable 3) provide action items from the attached recording. 
+Write your summary in the same language as the audio. Use markdown headers level two (##) for the transcription, summarization, etc. Always write the transcription first, then the rest.
 """
 
 # Extra MIME types not always in Python's default database.
