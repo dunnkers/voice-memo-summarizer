@@ -38,25 +38,25 @@ Requires a GCP project with Vertex AI enabled. Set the `GCP_PROJECT` environment
 
 ```sh
 # Summarize a file (copies to clipboard, prints markdown to stdout)
-uvx git+https://github.com/dunnkers/voice-memo-summarizer voice-memo-summarizer recording.m4a
+uvx --from git+https://github.com/dunnkers/voice-memo-summarizer voice-memo-summarizer recording.m4a
 
 # Save to a file
-uvx git+https://github.com/dunnkers/voice-memo-summarizer voice-memo-summarizer recording.m4a > summary.md
+uvx --from git+https://github.com/dunnkers/voice-memo-summarizer voice-memo-summarizer recording.m4a > summary.md
 
 # Multiple files
-uvx git+https://github.com/dunnkers/voice-memo-summarizer voice-memo-summarizer recording.m4a notes.md photo.heic
+uvx --from git+https://github.com/dunnkers/voice-memo-summarizer voice-memo-summarizer recording.m4a notes.md photo.heic
 
 # Custom prompt from a markdown file
-uvx git+https://github.com/dunnkers/voice-memo-summarizer voice-memo-summarizer --prompt-file prompt.md recording.m4a
+uvx --from git+https://github.com/dunnkers/voice-memo-summarizer voice-memo-summarizer --prompt-file prompt.md recording.m4a
 
 # Explicit GCP project
-uvx git+https://github.com/dunnkers/voice-memo-summarizer voice-memo-summarizer --gcp-project my-proj recording.m4a
+uvx --from git+https://github.com/dunnkers/voice-memo-summarizer voice-memo-summarizer --gcp-project my-proj recording.m4a
 
 # Skip clipboard copy
-uvx git+https://github.com/dunnkers/voice-memo-summarizer voice-memo-summarizer --no-clipboard recording.m4a
+uvx --from git+https://github.com/dunnkers/voice-memo-summarizer voice-memo-summarizer --no-clipboard recording.m4a
 
 # No arguments — opens a native macOS file picker
-uvx git+https://github.com/dunnkers/voice-memo-summarizer voice-memo-summarizer
+uvx --from git+https://github.com/dunnkers/voice-memo-summarizer voice-memo-summarizer
 ```
 
 If installed manually, use `uv run voice-memo-summarizer` instead of the `uvx git+...` command.
