@@ -5,8 +5,6 @@ import subprocess
 import sys
 from pathlib import Path
 
-from dotenv import load_dotenv
-
 from voice_memo_summarizer.clipboard import pick_files
 from voice_memo_summarizer.summarizer import DEFAULT_PROMPT, summarize
 
@@ -15,25 +13,45 @@ def build_parser() -> argparse.ArgumentParser:
     """Build the CLI argument parser."""
     parser = argparse.ArgumentParser(
         prog="voice-memo-summarizer",
-        description="Summarize voice memos and other files using Gemini.",
+        description="Summarize voice memos and other files using Gemini on Vertex AI. "
+        "Outputs raw markdown to stdout; status messages go to stderr. "
+        "The summary is copied to the clipboard by default.",
+        epilog=(
+            "examples:\n"
+            "  %(prog)s recording.m4a\n"
+            "  %(prog)s recording.m4a > summary.md\n"
+            "  %(prog)s --prompt-file prompt.md recording.m4a\n"
+            "  %(prog)s --gcp-project my-proj --no-clipboard *.m4a\n"
+            "  %(prog)s                  # opens macOS file picker"
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument(
         "files",
         nargs="*",
         type=Path,
-        help="Files to summarize. Opens macOS file picker if none provided.",
+        help="files to summarize (audio, video, images, PDFs, etc.). "
+        "Opens a native macOS file picker when omitted.",
     )
     parser.add_argument(
         "--prompt-file",
         type=Path,
         default=None,
-        help="Path to a markdown file containing the prompt. Uses built-in default if omitted.",
+        metavar="PATH",
+        help="path to a markdown file containing a custom prompt. "
+        "Uses a built-in meeting-notes prompt when omitted.",
+    )
+    parser.add_argument(
+        "--gcp-project",
+        default=None,
+        metavar="PROJECT",
+        help="GCP project ID for Vertex AI (default: GCP_PROJECT env var).",
     )
     parser.add_argument(
         "--no-clipboard",
         action="store_true",
         default=False,
-        help="Do not copy the summary to the clipboard.",
+        help="skip copying the summary to the clipboard.",
     )
     return parser
 
@@ -71,8 +89,6 @@ def copy_to_clipboard(text: str) -> None:
 
 def main() -> None:
     """Select files, summarize with Gemini, and output the result."""
-    load_dotenv()
-
     args = build_parser().parse_args()
     files = resolve_files(args.files)
 
@@ -90,7 +106,7 @@ def main() -> None:
 
     print("Sending to Gemini...", file=sys.stderr)
     try:
-        summary = summarize(files, prompt=prompt)
+        summary = summarize(files, prompt=prompt, gcp_project=args.gcp_project)
     except Exception as e:
         print(f"Error during summarization: {e}", file=sys.stderr)
         sys.exit(1)

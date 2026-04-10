@@ -41,11 +41,13 @@ def guess_mime_type(path: Path) -> str:
     return mime or "application/octet-stream"
 
 
-def make_client() -> genai.Client:
+def make_client(gcp_project: str | None = None) -> genai.Client:
     """Create a Vertex AI Gemini client."""
-    project = os.environ.get("GCP_PROJECT")
+    project = gcp_project or os.environ.get("GCP_PROJECT")
     if not project:
-        raise RuntimeError("GCP_PROJECT environment variable is not set")
+        raise RuntimeError(
+            "GCP project not set. Pass --gcp-project or set GCP_PROJECT env var."
+        )
     return genai.Client(
         vertexai=True,
         project=project,
@@ -57,6 +59,7 @@ def summarize(
     files: list[Path],
     prompt: str = DEFAULT_PROMPT,
     client: genai.Client | None = None,
+    gcp_project: str | None = None,
 ) -> str:
     """Send files to Gemini with a prompt and return the response.
 
@@ -64,9 +67,10 @@ def summarize(
         files: Paths to files to embed in the request (audio, images, PDFs, etc.).
         prompt: The instruction prompt.
         client: Optional pre-configured client (for testing).
+        gcp_project: GCP project ID. Falls back to GCP_PROJECT env var.
     """
     if client is None:
-        client = make_client()
+        client = make_client(gcp_project)
 
     parts: list[types.Part | str] = [prompt]
     for file_path in files:

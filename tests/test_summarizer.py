@@ -1,12 +1,13 @@
 """Tests for the Gemini summarizer."""
 
 from pathlib import Path
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 
 from voice_memo_summarizer.summarizer import (
     DEFAULT_PROMPT,
+    GCP_LOCATION,
     MODEL,
     guess_mime_type,
     make_client,
@@ -32,8 +33,24 @@ class TestGuessMimeType:
 class TestMakeClient:
     def test_raises_without_gcp_project(self, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.delenv("GCP_PROJECT", raising=False)
-        with pytest.raises(RuntimeError, match="GCP_PROJECT"):
+        with pytest.raises(RuntimeError, match="GCP project not set"):
             make_client()
+
+    def test_cli_arg_takes_precedence(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setenv("GCP_PROJECT", "env-project")
+        with patch("voice_memo_summarizer.summarizer.genai.Client") as mock_cls:
+            make_client(gcp_project="cli-project")
+        mock_cls.assert_called_once_with(
+            vertexai=True, project="cli-project", location=GCP_LOCATION
+        )
+
+    def test_falls_back_to_env_var(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setenv("GCP_PROJECT", "env-project")
+        with patch("voice_memo_summarizer.summarizer.genai.Client") as mock_cls:
+            make_client()
+        mock_cls.assert_called_once_with(
+            vertexai=True, project="env-project", location=GCP_LOCATION
+        )
 
 
 class TestSummarize:

@@ -37,11 +37,17 @@ class TestBuildParser:
         args = parser.parse_args(["--no-clipboard", "a.m4a"])
         assert args.no_clipboard is True
 
+    def test_gcp_project(self) -> None:
+        parser = build_parser()
+        args = parser.parse_args(["--gcp-project", "my-proj", "a.m4a"])
+        assert args.gcp_project == "my-proj"
+
     def test_defaults(self) -> None:
         parser = build_parser()
         args = parser.parse_args(["a.m4a"])
         assert args.prompt_file is None
         assert args.no_clipboard is False
+        assert args.gcp_project is None
 
 
 class TestResolveFiles:
@@ -110,7 +116,6 @@ class TestMain:
                 "voice_memo_summarizer.__main__.summarize",
                 return_value=mock_summary,
             ),
-            patch("voice_memo_summarizer.__main__.load_dotenv"),
         ):
             main()
 
@@ -128,7 +133,6 @@ class TestMain:
                 "voice_memo_summarizer.__main__.summarize",
                 return_value="summary",
             ),
-            patch("voice_memo_summarizer.__main__.load_dotenv"),
             patch("voice_memo_summarizer.__main__.copy_to_clipboard") as mock_clip,
         ):
             main()
@@ -145,7 +149,6 @@ class TestMain:
                 "voice_memo_summarizer.__main__.summarize",
                 return_value="summary",
             ),
-            patch("voice_memo_summarizer.__main__.load_dotenv"),
             patch("voice_memo_summarizer.__main__.copy_to_clipboard") as mock_clip,
         ):
             main()
@@ -174,9 +177,28 @@ class TestMain:
                 "voice_memo_summarizer.__main__.summarize",
                 return_value="result",
             ) as mock_summarize,
-            patch("voice_memo_summarizer.__main__.load_dotenv"),
         ):
             main()
 
         mock_summarize.assert_called_once()
         assert mock_summarize.call_args.kwargs["prompt"] == "Custom prompt"
+
+    def test_passes_gcp_project(self, tmp_path: Path) -> None:
+        audio = tmp_path / "test.m4a"
+        audio.write_bytes(b"fake audio")
+
+        with (
+            patch.object(
+                sys,
+                "argv",
+                ["prog", "--no-clipboard", "--gcp-project", "my-proj", str(audio)],
+            ),
+            patch(
+                "voice_memo_summarizer.__main__.summarize",
+                return_value="result",
+            ) as mock_summarize,
+        ):
+            main()
+
+        mock_summarize.assert_called_once()
+        assert mock_summarize.call_args.kwargs["gcp_project"] == "my-proj"
