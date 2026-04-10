@@ -8,9 +8,23 @@ Supports audio (`.m4a`, `.mp3`, `.wav`, `.ogg`, `.flac`, `.webm`), video (`.mp4`
 
 ## Installation
 
+### As a Claude Code skill
+
 ```sh
+npx skills add https://github.com/dunnkers/voice-memo-summarizer --skill voice-memo-summarizer
+```
+
+### Manually
+
+Clone the repo and install dependencies:
+
+```sh
+git clone https://github.com/dunnkers/voice-memo-summarizer.git
+cd voice-memo-summarizer
 uv sync
 ```
+
+### Prerequisites
 
 Authenticate with GCP:
 
@@ -24,26 +38,28 @@ Requires a GCP project with Vertex AI enabled. Set the `GCP_PROJECT` environment
 
 ```sh
 # Summarize a file (copies to clipboard, prints markdown to stdout)
-uv run voice-memo-summarizer recording.m4a
+uvx git+https://github.com/dunnkers/voice-memo-summarizer voice-memo-summarizer recording.m4a
 
 # Save to a file
-uv run voice-memo-summarizer recording.m4a > summary.md
+uvx git+https://github.com/dunnkers/voice-memo-summarizer voice-memo-summarizer recording.m4a > summary.md
 
 # Multiple files
-uv run voice-memo-summarizer recording.m4a notes.md photo.heic
+uvx git+https://github.com/dunnkers/voice-memo-summarizer voice-memo-summarizer recording.m4a notes.md photo.heic
 
 # Custom prompt from a markdown file
-uv run voice-memo-summarizer --prompt-file prompt.md recording.m4a
+uvx git+https://github.com/dunnkers/voice-memo-summarizer voice-memo-summarizer --prompt-file prompt.md recording.m4a
 
 # Explicit GCP project
-uv run voice-memo-summarizer --gcp-project my-proj recording.m4a
+uvx git+https://github.com/dunnkers/voice-memo-summarizer voice-memo-summarizer --gcp-project my-proj recording.m4a
 
 # Skip clipboard copy
-uv run voice-memo-summarizer --no-clipboard recording.m4a
+uvx git+https://github.com/dunnkers/voice-memo-summarizer voice-memo-summarizer --no-clipboard recording.m4a
 
 # No arguments — opens a native macOS file picker
-uv run voice-memo-summarizer
+uvx git+https://github.com/dunnkers/voice-memo-summarizer voice-memo-summarizer
 ```
+
+If installed manually, use `uv run voice-memo-summarizer` instead of the `uvx git+...` command.
 
 Status messages (file selection, progress) go to stderr, so stdout contains only the raw markdown summary. This makes the tool pipe-friendly and usable programmatically (e.g. from an agent or script).
 
